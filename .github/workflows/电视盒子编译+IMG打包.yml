@@ -330,6 +330,10 @@ jobs:
           replacesArtifacts: true
           token: ${{ secrets.MY_GITHUB_TOKEN }}
 
+      - name: Check OpenWrt rootfs file
+        run: |
+          ls -l openwrt/output/*rootfs.tar.gz || (echo "File not found!" && exit 1)
+
       - name: Packaging OpenWrt
         if: ${{ steps.clean.outputs.status }} == 'success' && !cancelled()
         uses: ophub/amlogic-s9xxx-openwrt@main
@@ -341,7 +345,6 @@ jobs:
           kernel_repo: ${{ inputs.kernel_repo }}
           kernel_usage: ${{ inputs.kernel_usage }}
           builder_name: ${{ inputs.builder_name }}
-          gh_token: ${{ secrets.MY_GITHUB_TOKEN }}
 
       - name: Upload the packaged OpenWrt
         uses: ncipollo/release-action@main
