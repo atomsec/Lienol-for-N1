@@ -295,20 +295,29 @@ jobs:
         id: clean
         if: ${{ steps.compile.outputs.status }} == 'success' && !cancelled()
         run: |
-          # Clean up server space
+          # Navigate to OpenWrt build directory
           cd openwrt/
-          mkdir output
-          cp -f bin/targets/*/*/*rootfs.tar.gz output/
+          # Ensure output directory exists
+          mkdir -p output
+          # Copy rootfs.tar.gz if it exists
+          find bin/targets -type f -name '*rootfs.tar.gz' -exec cp -f {} output/ \;
+          # Copy .config to output
           cp -f .config output/config
-          rm -rf $(ls . | grep -v "^output$" | xargs) 2>/dev/null
+          # Clean up all files and directories except 'output'
+          find . -mindepth 1 -maxdepth 1 ! -name 'output' -exec rm -rf {} +
 
           # Generate sha256sum file
           cd output/
-          for file in *; do [[ ! -d "${file}" ]] && sha256sum "${file}" >"${file}.sha"; done
+          for file in *; do
+            if [[ ! -d "$file" && ! "$file" == *.sha ]]; then
+              sha256sum "$file" > "${file}.sha"
+            fi
+          done
 
           # Set output information
           df -hT ${PWD}
           echo "status=success" >> ${GITHUB_OUTPUT}
+
 
       - name: Upload OpenWrt to Release
         uses: ncipollo/release-action@main
